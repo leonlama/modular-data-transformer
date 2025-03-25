@@ -1,22 +1,22 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models.usage import UsageLog
 from app.models.user import User
 
 def check_and_increment_usage(db: Session, user: User, endpoint: str):
-    # Define the period (last 30 days) for usage tracking
-    period_start = datetime.utcnow() - timedelta(days=30)
-    usage_count = (
-        db.query(UsageLog)
-        .filter(UsageLog.user_id == user.api_key)
-        .filter(UsageLog.timestamp >= period_start)
-        .count()
-    )
-    
-    if usage_count >= user.monthly_limit:
+    # 1) Possibly reset monthly usage
+    user.reset_monthly_usage_if_needed()
+    db.commit()  # commit so the user's usage_reset_date is up to date
+
+    # 2) Check if usage is at or above limit
+    if user.monthly_usage >= user.monthly_limit:
         raise Exception("Monthly limit exceeded")
-    
-    # Log this usage
-    log_entry = UsageLog(user_id=user.api_key, endpoint=endpoint)
-    db.add(log_entry)
+
+    # 3) Increment usage
+    user.monthly_usage += 1
+    db.commit()
+
+    # 4) Log in usage_log for auditing
+    record = UsageLog(user_id=user.api_key, endpoint=endpoint)
+    db.add(record)
     db.commit()
