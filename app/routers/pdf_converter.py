@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.auth import get_current_user, get_db
 from app.core.usage_tracker import check_and_increment_usage
 from app.models.user import User
+from app.tasks import pdf_to_excel_task
 
 router = APIRouter(prefix="/convert", tags=["conversion"])
 
@@ -37,3 +38,24 @@ async def convert_pdf_to_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": "attachment; filename=converted.xlsx"},
     )
+
+@router.post("/pdf-to-excel-async")
+async def convert_pdf_to_excel_async(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    # Check rate limit and log usage for this endpoint
+    try:
+        check_and_increment_usage(db, user, "pdf-to-excel-async")
+    except Exception as e:
+        raise HTTPException(status_code=429, detail=str(e))
+
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=415, detail="PDF required")
+
+    contents = await file.read()
+
+    # Enqueue Celery task
+    task = pdf_to_excel_task.delay(contents)
+    return {"task_id": task.id, "status": "queued"}

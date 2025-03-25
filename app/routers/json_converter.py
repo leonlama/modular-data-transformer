@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.auth import get_current_user, get_db
 from app.core.usage_tracker import check_and_increment_usage
 from app.models.user import User
+from app.tasks import json_to_csv_task
 
 router = APIRouter(prefix="/convert", tags=["conversion"])
 
@@ -49,3 +50,24 @@ async def json_to_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=converted.csv"}
     )
+
+@router.post("/json-to-csv-async")
+async def json_to_csv_async(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    # Check rate limit and log usage for this endpoint
+    try:
+        check_and_increment_usage(db, user, "json-to-csv-async")
+    except Exception as e:
+        raise HTTPException(status_code=429, detail=str(e))
+
+    if file.content_type != "application/json":
+        raise HTTPException(status_code=415, detail="JSON file required")
+
+    contents = await file.read()
+
+    # Enqueue Celery task
+    task = json_to_csv_task.delay(contents)
+    return {"task_id": task.id, "status": "queued"}
