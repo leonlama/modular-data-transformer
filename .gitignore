@@ -1,0 +1,13 @@
+# Bytecode and cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+
+# SQLite database files
+*.db
+
+# Temporary files
+temp.pdf
+

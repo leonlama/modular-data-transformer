@@ -1,12 +1,26 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 import pandas as pd
 from io import BytesIO
 from fastapi.responses import StreamingResponse, Response
+from sqlalchemy.orm import Session
+from app.core.auth import get_current_user, get_db
+from app.core.usage_tracker import check_and_increment_usage
+from app.models.user import User
 
 router = APIRouter(prefix="/convert", tags=["conversion"])
 
 @router.post("/csv-to-json")
-async def convert_csv_to_json(file: UploadFile = File(...)):
+async def convert_csv_to_json(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    # Check rate limit and log usage for this endpoint
+    try:
+        check_and_increment_usage(db, user, "csv-to-json")
+    except Exception as e:
+        raise HTTPException(status_code=429, detail=str(e))
+
     if file.content_type not in ("text/csv", "application/csv"):
         raise HTTPException(status_code=415, detail="CSV required")
     contents = await file.read()
@@ -18,7 +32,17 @@ async def convert_csv_to_json(file: UploadFile = File(...)):
 
 
 @router.post("/csv-to-excel")
-async def csv_to_excel(file: UploadFile = File(...)):
+async def csv_to_excel(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    # Check rate limit and log usage for this endpoint
+    try:
+        check_and_increment_usage(db, user, "csv-to-excel")
+    except Exception as e:
+        raise HTTPException(status_code=429, detail=str(e))
+
     if file.content_type not in ("text/csv", "application/csv"):
         raise HTTPException(status_code=415, detail="CSV required")
     contents = await file.read()
