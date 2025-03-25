@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.auth import get_current_user, get_db
 from app.core.usage_tracker import check_and_increment_usage
 from app.models.user import User
+from app.tasks import excel_to_csv_task, excel_to_json_task
 
 router = APIRouter(prefix="/convert", tags=["conversion"])
 
@@ -43,6 +44,30 @@ async def excel_to_csv(
         headers={"Content-Disposition": "attachment; filename=converted.csv"}
     )
 
+@router.post("/excel-to-csv-async")
+async def excel_to_csv_async(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    # Check rate limit and log usage for this endpoint
+    try:
+        check_and_increment_usage(db, user, "excel-to-csv-async")
+    except Exception as e:
+        raise HTTPException(status_code=429, detail=str(e))
+
+    if file.content_type not in (
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ):
+        raise HTTPException(status_code=415, detail="Excel file required")
+
+    contents = await file.read()
+
+    # Enqueue Celery task
+    task = excel_to_csv_task.delay(contents)
+    return {"task_id": task.id, "status": "queued"}
+
 @router.post("/excel-to-json")
 async def excel_to_json(
     file: UploadFile = File(...),
@@ -69,3 +94,27 @@ async def excel_to_json(
 
     # Return as JSON
     return df.to_dict(orient="records")
+
+@router.post("/excel-to-json-async")
+async def excel_to_json_async(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    # Check rate limit and log usage for this endpoint
+    try:
+        check_and_increment_usage(db, user, "excel-to-json-async")
+    except Exception as e:
+        raise HTTPException(status_code=429, detail=str(e))
+
+    if file.content_type not in (
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ):
+        raise HTTPException(status_code=415, detail="Excel file required")
+
+    contents = await file.read()
+
+    # Enqueue Celery task
+    task = excel_to_json_task.delay(contents)
+    return {"task_id": task.id, "status": "queued"}

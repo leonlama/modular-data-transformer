@@ -1,83 +1,151 @@
-# Modular Data Transformer
+# Modular Data Transformer API
 
-A Python-based API for converting data between various formats (PDF, CSV, Excel, XML, JSON) with **API key authentication**, **usage logging**, and **monthly rate limiting**.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Build Status](https://img.shields.io/github/workflow/status/leonlama/modular-data-transformer/CI)](https://github.comleonlama/modular-data-transformer/actions)
+
+The **Modular Data Transformer API** is a comprehensive, cloud-ready, and scalable RESTful service for converting data between multiple formats. Built with FastAPI and powered by Celery for asynchronous processing, it supports conversions such as:
+
+- **PDF → Excel**
+- **CSV → JSON** and **CSV → Excel**
+- **Excel → CSV** and **Excel → JSON**
+- **XML → JSON**
+- **JSON → CSV**
+
+Additionally, the API features robust **API key authentication**, **usage logging**, and **monthly rate limiting**, making it ideal for both free and premium subscription models.
 
 ## Features
 
-- **Multi-Format Conversions**  
-  - **PDF → Excel** (with Tabula for table extraction)  
-  - **CSV → JSON** / **CSV → Excel**  
-  - **Excel → CSV** / **Excel → JSON**  
-  - **JSON → CSV**  
-  - **XML → JSON**  
+- **Multi-Format Data Conversions**
+  - PDF → Excel (table extraction using Tabula)
+  - CSV → JSON and CSV → Excel
+  - Excel → CSV and Excel → JSON
+  - XML → JSON
+  - JSON → CSV
 
-- **API Key Authentication**  
-  - Each user has a unique `X-API-Key`  
-  - Stored in a SQLite `users` table  
-  - Quick script for creating test users (`create_user.py`)
+- **Asynchronous Processing**
+  - Asynchronous endpoints powered by Celery and Redis for handling large or batch file conversions without blocking.
+  - Poll task status with a dedicated endpoint.
 
-- **Usage Tracking & Rate Limiting**  
-  - Logs each request in a `usage_log` table (timestamp, user, endpoint)  
-  - Enforces monthly usage limit (e.g., 50 conversions)  
-  - Returns `429` if limit is exceeded
+- **Authentication & Usage Tracking**
+  - API key authentication using the `X-API-Key` header.
+  - SQLite-based usage logging with rate limiting (e.g., 50 conversions/month for free users).
+  - Endpoints to check current usage.
 
-- **Testing & Scripts**  
-  - Comprehensive test suite (`pytest`) with 7 passing tests  
-  - Scripts to generate test files (`create_test_csv.py`, `create_test_excel.py`, etc.)
-
-- **Docker & Deployment** (optional next steps)  
-  - Dockerize for easy deployment  
-  - Deploy on cloud platforms (Heroku, AWS, etc.) or list on RapidAPI
+- **Ready for Production**
+  - Clean, modular codebase following best practices.
+  - Comprehensive automated tests ensure reliability.
+  - Dockerized for easy deployment.
 
 ## Installation
 
-1. Clone this repo:
-   ```bash
-   git clone https://github.com/<your-username>/modular-data-transformer.git
-   cd modular-data-transformer
-   ```
+### Prerequisites
 
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # or .\venv\Scripts\activate on Windows
-   ```
+- Python 3.11+
+- Redis server (for Celery broker and backend)
+- Optional: Java (for PDF table extraction)
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Clone the Repository
 
-4. Initialize the database:
-   ```bash
-   python app/core/init_db.py
-   ```
+```bash
+git clone https://github.com/leonlama/modular-data-transformer.git
+cd modular-data-transformer
+```
 
-## Usage
+### Create a virtual environment and install dependencies:  
 
-1. Create a user:
-   ```bash
-   python create_user.py my-secret-key 50
-   ```
-   This adds a user with API key `my-secret-key` and monthly limit of 50 requests.
+```bash
+python -m venv venv
+source venv/bin/activate # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-2. Run the server:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+### Initialize database
 
-3. Send a request:
-   ```bash
-   curl.exe -X POST "http://127.0.0.1:8000/convert/csv-to-json" ^
-     -H "X-API-Key: my-secret-key" ^
-     -F "file=@test_data.csv;type=text/csv"
-   ```
-   You should receive a JSON response with the converted CSV data.
+```bash
+python app/core/init_db.py
+```
+
+### Create a test user
+
+```bash
+python create_user.py my-secret-key 50
+```
+
+## Running the API
+
+### Start the FastAPI Server
+
+```bash
+uvicorn app.main:app --reload
+```
+
+### Start the Celery Worker
+
+```bash
+celery -A celery_app.celery_app worker --pool=solo --loglevel=info
+```
+
+## API Endpoints
+
+### Conversion Endpoints
+
+| Conversion | Endpoint | Method |
+|------------|----------|--------|
+| PDF → Excel | `/convert/pdf-to-excel-async` | POST |
+| CSV → JSON | `/convert/csv-to-json-async` | POST |
+| CSV → Excel | `/convert/csv-to-excel-async` | POST |
+| Excel → CSV | `/convert/excel-to-csv-async` | POST |
+| Excel → JSON | `/convert/excel-to-json-async` | POST |
+| XML → JSON | `/convert/xml-to-json-async` | POST |
+| JSON → CSV | `/convert/json-to-csv-async` | POST |
+
+### Usage and Task Status
+
+| Operation | Endpoint | Method | Description |
+|-----------|----------|--------|-------------|
+| Check API Usage | `/account/usage` | GET | Returns the current monthly usage and the monthly limit for the authenticated user |
+| Poll Task Status | `/account/task-status/{task_id}` | GET | Returns the status and result of an asynchronous conversion task |
+
+## Example cURL Requests
+
+### Enqueue a CSV → JSON Conversion Task
+
+```bash
+curl.exe -X POST "http://127.0.0.1:8000/convert/csv-to-json-async" -H "X-API-Key: my-secret-key" -F "file=@test_data.csv;type=text/csv"
+```
+
+### Check Task Status
+
+```bash
+curl.exe -X GET "http://127.0.0.1:8000/account/task-status/<task_id>" -H "X-API-Key: my-secret-key"
+```
+
+Replace `<task_id>` with the ID returned from the previous request.
+
+## Deployment
+
+The API is designed for easy deployment:
+
+Docker: Use the provided Dockerfile to build a container.
+
+Cloud: Deploy on platforms like AWS, GCP, Heroku, or list on RapidAPI for increased visibility and monetization.
+
+## Documentation
+
+For detailed API documentation, visit the automatically generated Swagger UI at:
+
+```bash
+http://127.0.0.1:8000/docs
+```
 
 ## Contributing
 
-Feel free to submit issues or pull requests. For major changes, please open an issue first to discuss potential modifications.
+Contributions are welcome! Please fork this repository, create a new branch for your feature or bugfix, and submit a pull request. For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
 
-MIT
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+## Contact
+
+For questions or feedback, please contact me at leon.lamarca@yahoo.com
