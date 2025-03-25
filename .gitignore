@@ -1,12 +1,11 @@
-# Python cache files
+# Bytecode and cache files
 __pycache__/
 *.py[cod]
-*$py.class
 
 # Virtual environment
 venv/
 
-# SQLite database file
+# SQLite database files
 *.db
 
 # Temporary files
