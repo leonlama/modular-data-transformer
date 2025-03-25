@@ -28,3 +28,20 @@ async def excel_to_csv(file: UploadFile = File(...)):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=converted.csv"}
     )
+
+@router.post("/excel-to-json")
+async def excel_to_json(file: UploadFile = File(...)):
+    if file.content_type not in (
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ):
+        raise HTTPException(status_code=415, detail="Excel file required")
+
+    contents = await file.read()
+    try:
+        df = pd.read_excel(BytesIO(contents))
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Excel parse error: {e}")
+
+    # Return as JSON
+    return df.to_dict(orient="records")
