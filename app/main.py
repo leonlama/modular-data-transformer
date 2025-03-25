@@ -7,6 +7,7 @@ app = FastAPI(title="Modular Data Transformer")
 
 @app.on_event("startup")
 def on_startup():
+    print("DB init!")
     init_db()
 
 app.include_router(pdf_converter.router)

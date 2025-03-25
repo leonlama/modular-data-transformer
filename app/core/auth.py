@@ -11,14 +11,14 @@ def get_db():
     finally:
         db.close()
 
-def get_current_user(request: Request, db: Session = Depends(get_db)):
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     api_key = request.headers.get("X-API-Key")
     if not api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing API key",
         )
-
+    
     user = db.query(User).filter(User.api_key == api_key).first()
     if not user:
         raise HTTPException(
