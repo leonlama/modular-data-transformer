@@ -1,11 +1,12 @@
 # app/main.py
 from fastapi import FastAPI
-from app.routers import pdf_converter
-from app.routers.csv_converter import router as csv_router
+from app.routers import pdf_converter, csv_converter, excel_converter, xml_converter
 
 app = FastAPI(title="Modular Data Transformer")
 app.include_router(pdf_converter.router)
-app.include_router(csv_router)
+app.include_router(csv_converter.router)
+app.include_router(excel_converter.router)
+app.include_router(xml_converter.router)
 
 @app.get("/")
 def root():
