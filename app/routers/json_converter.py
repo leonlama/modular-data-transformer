@@ -8,6 +8,7 @@ from app.core.auth import get_current_user, get_db
 from app.core.usage_tracker import check_and_increment_usage
 from app.models.user import User
 from app.tasks import json_to_csv_task
+import base64
 
 router = APIRouter(prefix="/convert", tags=["conversion"])
 
@@ -69,5 +70,6 @@ async def json_to_csv_async(
     contents = await file.read()
 
     # Enqueue Celery task
-    task = json_to_csv_task.delay(contents)
+    encoded = base64.b64encode(contents).decode("utf-8")
+    task = json_to_csv_task.delay(encoded)
     return {"task_id": task.id, "status": "queued"}
