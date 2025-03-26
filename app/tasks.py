@@ -5,9 +5,9 @@ import base64
 import pandas as pd
 import tabula
 import xmltodict
-from celery import shared_task
+from celery_app import celery_app
 
-@shared_task(name="app.tasks.csv_to_json_task")
+@celery_app.task(name="app.tasks.csv_to_json_task")
 def csv_to_json_task(encoded_file_bytes):
     """
     Converts CSV bytes to a JSON string asynchronously.
@@ -20,7 +20,7 @@ def csv_to_json_task(encoded_file_bytes):
     except Exception as e:
         return json.dumps({"error": str(e)})
 
-@shared_task(name="app.tasks.csv_to_excel_task")
+@celery_app.task(name="app.tasks.csv_to_excel_task")
 def csv_to_excel_task(encoded_file_bytes):
     """
     Converts CSV bytes to Excel bytes asynchronously.
@@ -39,7 +39,7 @@ def csv_to_excel_task(encoded_file_bytes):
     except Exception as e:
         return json.dumps({"error": str(e)})
 
-@shared_task(name="app.tasks.excel_to_csv_task")
+@celery_app.task(name="app.tasks.excel_to_csv_task")
 def excel_to_csv_task(encoded_file_bytes):
     """
     Converts Excel bytes to CSV string asynchronously.
@@ -52,7 +52,7 @@ def excel_to_csv_task(encoded_file_bytes):
     except Exception as e:
         return json.dumps({"error": str(e)})
 
-@shared_task(name="app.tasks.excel_to_json_task")
+@celery_app.task(name="app.tasks.excel_to_json_task")
 def excel_to_json_task(encoded_file_bytes):
     """
     Converts Excel bytes to JSON string asynchronously.
@@ -65,7 +65,7 @@ def excel_to_json_task(encoded_file_bytes):
     except Exception as e:
         return json.dumps({"error": str(e)})
 
-@shared_task(name="app.tasks.pdf_to_excel_task")
+@celery_app.task(name="app.tasks.pdf_to_excel_task")
 def pdf_to_excel_task(encoded_file_bytes):
     """
     Converts PDF file bytes to Excel bytes asynchronously.
@@ -91,7 +91,7 @@ def pdf_to_excel_task(encoded_file_bytes):
     except Exception as e:
         return json.dumps({"error": str(e)})
 
-@shared_task(name="app.tasks.xml_to_json_task")
+@celery_app.task(name="app.tasks.xml_to_json_task")
 def xml_to_json_task(encoded_file_bytes):
     """
     Converts XML bytes to a JSON string asynchronously.
@@ -104,7 +104,7 @@ def xml_to_json_task(encoded_file_bytes):
     except Exception as e:
         return json.dumps({"error": str(e)})
 
-@shared_task(name="app.tasks.json_to_csv_task")
+@celery_app.task(name="app.tasks.json_to_csv_task")
 def json_to_csv_task(encoded_file_bytes):
     """
     Converts JSON bytes to CSV string asynchronously.
