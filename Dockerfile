@@ -7,11 +7,11 @@ RUN apt-get update && apt-get install -y default-jre && rm -rf /var/lib/apt/list
 WORKDIR /app
 
 # Add a build argument to bust the cache
-ARG CACHEBUST=1
+ARG CACHEBUST=2
 COPY requirements.txt .
 
 # Use the build argument so that this step is re-run when CACHEBUST changes
-RUN pip install --no-cache-dir --force-reinstall -r requirements.txt
+RUN echo "$CACHEBUST" && pip install --no-cache-dir --force-reinstall -r requirements.txt
 
 # Copy the rest of the code
 COPY . .
