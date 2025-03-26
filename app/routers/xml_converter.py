@@ -1,5 +1,6 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 import xmltodict
+import base64
 from sqlalchemy.orm import Session
 from app.core.auth import get_current_user, get_db
 from app.core.usage_tracker import check_and_increment_usage
@@ -50,5 +51,6 @@ async def xml_to_json_async(
     contents = await file.read()
 
     # Enqueue Celery task
-    task = xml_to_json_task.delay(contents)
+    encoded = base64.b64encode(contents).decode("utf-8")
+    task = xml_to_json_task.delay(encoded)
     return {"task_id": task.id, "status": "queued"}
