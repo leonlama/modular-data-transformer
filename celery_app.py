@@ -35,8 +35,5 @@ celery_app.conf.update(
     result_expires=3600,  # results expire after 1 hour
 )
 
-# Force the import so the worker definitely sees the tasks
-import app.tasks
-
 # IMPORTANT: Autodiscover tasks from the 'app' package
 celery_app.autodiscover_tasks(["app"])
