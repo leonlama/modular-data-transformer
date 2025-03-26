@@ -8,6 +8,9 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+# Explicitly import the tasks module to ensure tasks are registered
+import app.tasks
+
 # Get Redis URL from environment
 redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
@@ -15,7 +18,7 @@ celery_app = Celery("modular_data_transformer", broker=redis_url, backend=redis_
 
 celery_app.conf.update(
     broker_url=redis_url,
-    result_backend=redis_url,  # make sure the result backend is set
+    result_backend=redis_url,  # This enables task results via Redis
     task_serializer="json",
     result_serializer="json",
     accept_content=["json"],
@@ -24,4 +27,4 @@ celery_app.conf.update(
     result_expires=3600,  # Results expire after 1 hour
 )
 
-celery_app.autodiscover_tasks(['app.tasks'])
+celery_app.autodiscover_tasks(['app'])
