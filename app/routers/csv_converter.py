@@ -7,6 +7,7 @@ from app.core.auth import get_current_user, get_db
 from app.core.usage_tracker import check_and_increment_usage
 from app.models.user import User
 from app.tasks import csv_to_json_task, csv_to_excel_task
+import base64
 
 router = APIRouter(prefix="/convert", tags=["conversion"])
 
@@ -47,9 +48,8 @@ async def convert_csv_to_json_async(
         raise HTTPException(status_code=415, detail="CSV required")
 
     contents = await file.read()
-
-    # Enqueue Celery task
-    task = csv_to_json_task.delay(contents)
+    encoded = base64.b64encode(contents).decode("utf-8")
+    task = csv_to_json_task.delay(encoded)
     return {"task_id": task.id, "status": "queued"}
 
 @router.post("/csv-to-excel")
