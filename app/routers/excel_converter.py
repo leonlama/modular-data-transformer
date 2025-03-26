@@ -1,6 +1,7 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 import pandas as pd
 from io import BytesIO
+import base64
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from app.core.auth import get_current_user, get_db
@@ -63,9 +64,12 @@ async def excel_to_csv_async(
         raise HTTPException(status_code=415, detail="Excel file required")
 
     contents = await file.read()
+    
+    # Encode contents as base64 string
+    encoded_contents = base64.b64encode(contents).decode("utf-8")
 
-    # Enqueue Celery task
-    task = excel_to_csv_task.delay(contents)
+    # Enqueue Celery task with encoded contents
+    task = excel_to_csv_task.delay(encoded_contents)
     return {"task_id": task.id, "status": "queued"}
 
 @router.post("/excel-to-json")
@@ -115,6 +119,9 @@ async def excel_to_json_async(
 
     contents = await file.read()
 
-    # Enqueue Celery task
-    task = excel_to_json_task.delay(contents)
+    # Encode contents as base64 string
+    encoded_contents = base64.b64encode(contents).decode("utf-8")
+
+    # Enqueue Celery task with encoded contents
+    task = excel_to_json_task.delay(encoded_contents)
     return {"task_id": task.id, "status": "queued"}
