@@ -20,3 +20,7 @@ app.include_router(account.router)
 @app.get("/")
 def root():
     return {"message": "Welcome to the Modular Data Transformer API!"}
+
+@app.get("/ping")
+def ping():
+    return {"status": "OK"}
