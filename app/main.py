@@ -1,4 +1,5 @@
 # app/main.py
+import os
 from fastapi import FastAPI
 from app.core.init_db import init_db
 from app.routers import pdf_converter, csv_converter, excel_converter, xml_converter, json_converter, account
@@ -24,3 +25,7 @@ def root():
 @app.get("/ping")
 def ping():
     return {"status": "OK"}
+
+@app.get("/env")
+def read_env():
+    return {"REDIS_URL": os.environ.get("REDIS_URL")}
