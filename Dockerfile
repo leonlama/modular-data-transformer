@@ -5,8 +5,12 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y default-jre && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+# Add a build argument to bust the cache
+ARG CACHEBUST=1
 COPY requirements.txt .
-# Force reinstall with --no-cache-dir to prevent cached wheels from interfering
+
+# Use the build argument so that this step is re-run when CACHEBUST changes
 RUN pip install --no-cache-dir --force-reinstall -r requirements.txt
 
 # Copy the rest of the code
