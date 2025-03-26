@@ -3,8 +3,8 @@ import os
 import sys
 from celery import Celery
 
-# Ensure the parent directory is in sys.path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# Set project root as the directory of celery_app.py so that "app" is importable
+project_root = os.path.abspath(os.path.dirname(__file__))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
@@ -28,12 +28,15 @@ celery_app.conf.broker_transport_options = {
 # Update Celery configuration
 celery_app.conf.update(
     task_serializer="json",
-    result_serializer="json", 
+    result_serializer="json",
     accept_content=["json"],
     timezone="UTC",
     enable_utc=True,
     result_expires=3600,  # results expire after 1 hour
 )
+
+# Force import of tasks so they are registered
+import app.tasks
 
 # IMPORTANT: Autodiscover tasks from the 'app' package
 celery_app.autodiscover_tasks(["app"])
