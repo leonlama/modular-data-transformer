@@ -17,6 +17,15 @@ celery_app = Celery("modular_data_transformer", broker=redis_url)
 # Set result backend to same Redis instance
 celery_app.conf.result_backend = redis_url
 
+# Enable connection retries on startup
+celery_app.conf.broker_connection_retry_on_startup = True
+celery_app.conf.broker_transport_options = {
+    'max_retries': 3,       # number of retry attempts
+    'interval_start': 0,    # initial retry delay in seconds
+    'interval_step': 0.2,   # incremental increase for subsequent retries
+    'interval_max': 0.5,    # maximum retry delay in seconds
+}
+
 # Update Celery configuration
 celery_app.conf.update(
     task_serializer="json",
