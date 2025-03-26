@@ -101,7 +101,8 @@ async def csv_to_excel_async(
         raise HTTPException(status_code=415, detail="CSV required")
 
     contents = await file.read()
-
-    # Enqueue Celery task
-    task = csv_to_excel_task.delay(contents)
+    
+    # Base64 encode contents before sending to Celery
+    encoded = base64.b64encode(contents).decode("utf-8")
+    task = csv_to_excel_task.delay(encoded)
     return {"task_id": task.id, "status": "queued"}
