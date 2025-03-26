@@ -15,6 +15,7 @@ celery_app = Celery("modular_data_transformer")
 redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 celery_app.conf.broker_url = redis_url
 celery_app.conf.result_backend = redis_url
+celery_app.conf.task_ignore_result = False
 
 # Enable connection retries on startup
 celery_app.conf.broker_connection_retry_on_startup = True
